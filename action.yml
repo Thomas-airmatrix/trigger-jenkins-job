@@ -39,7 +39,7 @@ runs:
         verbose=${{ inputs.verbose }}
         userName=${{ inputs.jenkins-username }}
         password=${{ inputs.jenkins-pat }}
-        branch="${{ github.ref }}"
+        branch="${{ github.head_ref }}"
 
         startTime=$(date)
         startTimeSeconds=$(date -d "$startTime" +%s) 
