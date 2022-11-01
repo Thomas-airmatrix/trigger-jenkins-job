@@ -39,6 +39,7 @@ runs:
         verbose=${{ inputs.verbose }}
         userName=${{ inputs.jenkins-username }}
         password=${{ inputs.jenkins-pat }}
+        branch="${{ github.ref }}"
 
         startTime=$(date)
         startTimeSeconds=$(date -d "$startTime" +%s) 
@@ -50,7 +51,7 @@ runs:
 
         #Generate Crumb value
         CRUMB=`curl -s -u "$userName:$password" $urlOfJenkinsServer'/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)'`
-        TRIGGERJOBJSON=$(curl -I -s -X POST -u "$userName:$password"  -H "$CRUMB" "$urlOfJenkinsServer"/job/"$jenkinsJobName"/build)
+        TRIGGERJOBJSON=$(curl -d "branch=$branch" -I -s -X POST -u "$userName:$password"  -H "$CRUMB" "$urlOfJenkinsServer"/job/"$jenkinsJobName"/buildWithParameters)
         
         if [[ $verbose == true ]]; then
           echo "Results of Triggering The Job:"
