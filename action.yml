@@ -195,7 +195,6 @@ runs:
         done 
 
         #Once I reach here, building is false, so the job isn't running any longer
-        #Therefor, we can check the result
         case $RESULT in
             SUCCESS)
                 echo "Build completed successfully"
