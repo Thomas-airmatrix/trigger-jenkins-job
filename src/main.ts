@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 const axios = require('axios');
-const FormData = require('form-data');
 
 const jenkins_server: string = core.getInput("jenkins-server")
 const jenkins_job: string = core.getInput("jenkins-job")
@@ -110,15 +109,13 @@ async function run(): Promise<void> {
   let pr_num = matches[1];
   core.info(`Starting Job ${jenkins_job} with branch=${ref} pr=${pr_num}`)
   core.info(`> ${jenkins_server}/job/${jenkins_job}/buildWithParameters`);
-  let params = new FormData();
-  params.append("branch", ref);
-  params.append("pull_request", pr_num);
   let x = await axios({
    method: 'post',
    url: `${jenkins_server}/job/${jenkins_job}/buildWithParameters`,
-   body: params,
+   headers: { 'Content-Type': 'application/x-www-form-urlencoded',  
+              'Authorization': `Basic ${API_TOKEN}`},
+   data: `branch=${encodeURIComponent(ref)}&pull_request=${encodeURIComponent(pr_num)}`,
    maxRedirects: "0",
-   headers: headers,
   });
   let job_id = await poll_build(x.headers['location'])
   let est = 5000;
