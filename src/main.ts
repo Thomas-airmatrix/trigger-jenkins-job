@@ -59,7 +59,8 @@ async function log(build_number:number ): Promise<LogData> {
 
  let data = {
   last_command: "",
-  stages: 0
+  stages: 0,
+  last_stage: -1,
  }
  let job = await axios({
   method: 'get',
@@ -68,7 +69,17 @@ async function log(build_number:number ): Promise<LogData> {
  });
  let prev_s = ""
  let scnt = 0;
+ let failover = 1000000000; 
+ let l = 0; 
  for (const line of job.data.split("\n")) {
+  l+=1;
+  if (line.endsWith(" skipped due to earlier failure(s)")) {
+   failover = l - 2;
+  }
+ }
+ l=0;
+ for (const line of job.data.split("\n")) {
+  l+=1;
   const [time_str, rest] = split_once(line, "  ")
   const ps = prev_s;
   prev_s = ""
@@ -76,11 +87,18 @@ async function log(build_number:number ): Promise<LogData> {
    prev_s = rest.slice("[Pipeline] ".length).trim()
    if (ps === "stage") {
     data.stages += 1;
-    const stage_name = prev_s.replace(/[^ a-zA-Z0-9]/g, '').trim()
-    console.log(`::group::${stage_name}`)
+    if (data.last_stage == -1 && l >= failover) {
+     data.last_stage = data.stages
+    }
+    if (l<failover){
+     const stage_name = prev_s.replace(/[^ a-zA-Z0-9\-]/g, '').trim()
+     console.log(`::group::${stage_name}`)
+    }
    }
    if (ps === '}' && prev_s == "// stage") {
-    console.log(`::end::group`)
+    if (l < (failover+1)) {
+     console.log(`::end::group`)
+    }
    }
    continue
   }
@@ -90,12 +108,10 @@ async function log(build_number:number ): Promise<LogData> {
   console.log(rest)
  }
  return data
- // console.log(job.data.toString())
 }
 
 async function run(): Promise<void> {
  try {
-  // await log(26)
   let ref = process.env["GITHUB_REF"]
   if (ref == null) {
    core.warning("Missing GITHUB_REF env var");

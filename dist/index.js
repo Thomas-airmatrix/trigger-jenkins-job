@@ -94,7 +94,8 @@ function log(build_number) {
     return __awaiter(this, void 0, void 0, function* () {
         let data = {
             last_command: "",
-            stages: 0
+            stages: 0,
+            last_stage: -1,
         };
         let job = yield axios({
             method: 'get',
@@ -103,7 +104,17 @@ function log(build_number) {
         });
         let prev_s = "";
         let scnt = 0;
+        let failover = 1000000000;
+        let l = 0;
         for (const line of job.data.split("\n")) {
+            l += 1;
+            if (line.endsWith(" skipped due to earlier failure(s)")) {
+                failover = l - 2;
+            }
+        }
+        l = 0;
+        for (const line of job.data.split("\n")) {
+            l += 1;
             const [time_str, rest] = split_once(line, "  ");
             const ps = prev_s;
             prev_s = "";
@@ -111,11 +122,18 @@ function log(build_number) {
                 prev_s = rest.slice("[Pipeline] ".length).trim();
                 if (ps === "stage") {
                     data.stages += 1;
-                    const stage_name = prev_s.replace(/[^ a-zA-Z0-9]/g, '').trim();
-                    console.log(`::group::${stage_name}`);
+                    if (data.last_stage == -1 && l >= failover) {
+                        data.last_stage = data.stages;
+                    }
+                    if (l < failover) {
+                        const stage_name = prev_s.replace(/[^ a-zA-Z0-9\-]/g, '').trim();
+                        console.log(`::group::${stage_name}`);
+                    }
                 }
                 if (ps === '}' && prev_s == "// stage") {
-                    console.log(`::end::group`);
+                    if (l < (failover + 1)) {
+                        console.log(`::end::group`);
+                    }
                 }
                 continue;
             }
@@ -125,13 +143,11 @@ function log(build_number) {
             console.log(rest);
         }
         return data;
-        // console.log(job.data.toString())
     });
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            // await log(26)
             let ref = process.env["GITHUB_REF"];
             if (ref == null) {
                 core.warning("Missing GITHUB_REF env var");
