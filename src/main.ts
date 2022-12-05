@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 const axios = require('axios');
+const FormData = require('form-data');
 
 const jenkins_server: string = core.getInput("jenkins_server")
 const jenkins_job: string = core.getInput("jenkins_job")
