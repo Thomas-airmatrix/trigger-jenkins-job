@@ -131,6 +131,7 @@ async function run(): Promise<void> {
    let data = await log(job_id)
    if (info.result === "SUCCESS") {
     core.summary.addHeading(`All ${data.stages} stages passed`)
+    await core.summary.write()
    } else {
     core.setFailed(`${info.result}: Last command: ${data.last_command}`)
    }

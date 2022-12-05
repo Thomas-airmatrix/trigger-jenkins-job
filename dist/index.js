@@ -167,6 +167,7 @@ function run() {
                 let data = yield log(job_id);
                 if (info.result === "SUCCESS") {
                     core.summary.addHeading(`All ${data.stages} stages passed`);
+                    yield core.summary.write();
                 }
                 else {
                     core.setFailed(`${info.result}: Last command: ${data.last_command}`);
