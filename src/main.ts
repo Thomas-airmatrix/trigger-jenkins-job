@@ -2,10 +2,10 @@ import * as core from '@actions/core'
 const axios = require('axios');
 const FormData = require('form-data');
 
-const jenkins_server: string = core.getInput("jenkins_server")
-const jenkins_job: string = core.getInput("jenkins_job")
-const jenkins_username: string = core.getInput("jenkins_username")
-const jenkins_pat: string = core.getInput("jenkins_pat")
+const jenkins_server: string = core.getInput("jenkins-server")
+const jenkins_job: string = core.getInput("jenkins-job")
+const jenkins_username: string = core.getInput("jenkins-username")
+const jenkins_pat: string = core.getInput("jenkins-pat")
 const API_TOKEN = Buffer.from(`${jenkins_username}:${jenkins_pat}`).toString('base64');
 let headers = {
  'Authorization': `Basic ${API_TOKEN}`,
@@ -109,6 +109,7 @@ async function run(): Promise<void> {
   }
   let pr_num = matches[1];
   core.info(`Starting Job ${jenkins_job} with branch=${ref} pr=${pr_num}`)
+  core.info(`> ${jenkins_server}/job/${jenkins_job}/buildWithParameters`);
   let params = new FormData();
   params.append("branch", ref);
   params.append("pull_request", pr_num);
