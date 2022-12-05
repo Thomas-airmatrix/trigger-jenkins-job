@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 const axios = require('axios');
-
 const jenkins_server: string = core.getInput("jenkins-server")
 const jenkins_job: string = core.getInput("jenkins-job")
 const jenkins_username: string = core.getInput("jenkins-username")
@@ -56,11 +55,11 @@ type LogData = {
     stages: number;
 }
 async function log(build_number:number ): Promise<LogData> {
-
  let data = {
   last_command: "",
   stages: 0,
   last_stage: -1,
+  last_stage_name: ""
  }
  let job = await axios({
   method: 'get',
@@ -75,6 +74,7 @@ async function log(build_number:number ): Promise<LogData> {
   l+=1;
   if (line.endsWith(" skipped due to earlier failure(s)")) {
    failover = l - 2;
+   break;
   }
  }
  l=0;
@@ -86,11 +86,11 @@ async function log(build_number:number ): Promise<LogData> {
   if (rest.startsWith("[Pipeline] ")) {
    prev_s = rest.slice("[Pipeline] ".length).trim()
    if (ps === "stage") {
-    data.stages += 1;
     if (data.last_stage == -1 && l >= failover) {
      data.last_stage = data.stages
     }
-    if (l<failover){
+    data.stages += 1;
+    if (l<=failover){
      const stage_name = prev_s.replace(/[^ a-zA-Z0-9\-]/g, '').trim()
      console.log(`::group::${stage_name}`)
     }
